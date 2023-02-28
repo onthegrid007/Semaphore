@@ -10,11 +10,11 @@ Semaphore::Semaphore(int64_t i) :
 	m_CInit(i),
 	m_C(i) { }
 
-Semaphore& Semaphore::inc(int64_t i) {
+Semaphore& Semaphore::inc(const int64_t i) {
 	return *this += i;
 }
 
-Semaphore& Semaphore::dec(int64_t i) {
+Semaphore& Semaphore::dec(const int64_t i) {
 	return *this -= i;
 }
 
@@ -22,16 +22,16 @@ void Semaphore::notify() {
 	m_CV.notify_all();
 }
 
-void Semaphore::notify_single() {
+void Semaphore::notify_one() {
 	m_CV.notify_one();
 }
 
 void Semaphore::waitFor(WaitFunc&& rtnBool) {
 	CVLock lock(m_M);
-	while(!rtnBool(m_C, m_CInit)) m_CV.wait(lock, [cVal = m_C, cInitVal = m_CInit, &rtnBool]{ return rtnBool(cVal, cInitVal); });
+	while(!rtnBool(m_C, m_CInit)) m_CV.wait(lock, [cVal = m_C.load(), cInitVal = m_CInit.load(), &rtnBool]{ return rtnBool(cVal, cInitVal); });
 }
 
-void Semaphore::waitForI(int64_t i) {
+void Semaphore::waitForI(const int64_t i) {
 	waitFor([&, i](const int64_t cVal, const int64_t cInitVal){ return (cVal == i); });
 }
 
@@ -39,7 +39,7 @@ void Semaphore::wait() {
 	waitFor([&](const int64_t cVal, const int64_t cInitVal){ return (cVal == cInitVal); });
 }
 
-Semaphore& Semaphore::set(int64_t i) {
+Semaphore& Semaphore::set(const int64_t i) {
 	wait();
 	m_C = i;
 	m_CInit = i;
@@ -59,27 +59,29 @@ int64_t Semaphore::operator-(const Semaphore& other) {
 }
 
 Semaphore& Semaphore::operator+=(const int64_t i) {
-	auto* lock = new TLock(m_M);
-	m_C += i;
-	delete lock;
-	// notify();
+	// {
+	// 	CVLock lock(m_M);
+		m_C += i;
+	// }
+	notify();
 	return *this;
 }
 
 Semaphore& Semaphore::operator-=(const int64_t i) {
-	auto* lock = new TLock(m_M);
-	m_C -= i;
-	delete lock;
-	// notify();
+	// {
+	// 	CVLock lock(m_M);
+		m_C -= i;
+	// }
+	notify();
 	return *this;
 }
 
 Semaphore& Semaphore::operator++() {
-	return this->inc();
+	return *this += 1;
 }
 
 Semaphore& Semaphore::operator--() {
-	return this->dec();
+	return *this -= 1;
 }
 
 Semaphore::~Semaphore() {

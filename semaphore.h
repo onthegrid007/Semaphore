@@ -6,23 +6,23 @@
 #include "vendor/Singleton/inline_abi_macros.h"
 #include <condition_variable>
 #include <functional>
+#include <atomic>
 
 class Semaphore : public NonCopyable, public NonMovable {
     public:
     typedef std::function<bool(const int64_t cVal, const int64_t CInitVal)> WaitFunc;
     typedef std::unique_lock<std::mutex> CVLock;
-    typedef std::lock_guard<std::mutex> TLock;
-    Semaphore(int64_t i = 0);
+    Semaphore(const int64_t i = 0);
     ~Semaphore();
-    Semaphore& inc(int64_t i = 0);
-    Semaphore& dec(int64_t i = 0);
+    Semaphore& inc(const int64_t i = 0);
+    Semaphore& dec(const int64_t i = 0);
     void notify();
-    void notify_single();
+    void notify_one();
     void waitFor(WaitFunc&& retBool);
-    void waitForI(int64_t i);
+    void waitForI(const int64_t i);
     void wait();
     void reset();
-    Semaphore& set(int64_t i);
+    Semaphore& set(const int64_t i);
     operator int64_t();
     int64_t operator+(const Semaphore& other);
     int64_t operator-(const Semaphore& other);
@@ -34,7 +34,8 @@ class Semaphore : public NonCopyable, public NonMovable {
     private:
     std::mutex m_M;
     std::condition_variable m_CV;
-    int64_t m_CInit;
-    int64_t m_C;
+    // int64_t m_CInit;
+    std::atomic<int64_t> m_C;
+    std::atomic<int64_t> m_CInit;
 };
 #endif
