@@ -4,9 +4,9 @@
 #include "vendor/Singleton/noncopyable.h"
 #include "vendor/Singleton/nonmoveable.h"
 #include "vendor/Singleton/inline_abi_macros.h"
+#include <atomic>
 #include <condition_variable>
 #include <functional>
-#include <atomic>
 
 class Semaphore : public NonCopyable, public NonMovable {
     public:
