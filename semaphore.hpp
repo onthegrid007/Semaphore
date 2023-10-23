@@ -3,10 +3,11 @@
 
 #include "vendor/Singleton/noncopyable.h"
 #include "vendor/Singleton/inline_abi_macros.h"
+// #include "vendor/ADVClock/vendor/Timestamp/timestamp.hpp"
 #include <condition_variable>
 #include <functional>
 
-class Semaphore : public NonCopyable {
+class Semaphore {
     public:
     typedef std::uint64_t CType;
     typedef std::function<bool(const CType cVal, const CType CInitVal)> WaitFunc;
@@ -39,10 +40,18 @@ class Semaphore : public NonCopyable {
         waitFor([&](const CType cVal, const CType cInitVal){ return cVal == cInitVal; });
     }
     
-    template<typename TP>
-    const std::cv_status waitFor(WaitFunc spin, const TP& until) {
+    const bool waitFor(WaitFunc spin, const CType timeoutInMSec, CType timeoutLimit) {
         CVLock lock(m_mtx);
-        return m_cv.wait_until(lock, until, [&](){ return spin(m_c, m_cInit); });
+        auto until{std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutInMSec)};
+        while(!spin(m_c, m_cInit)) {
+            if(m_cv.wait_until(lock, until) == std::cv_status::timeout) {
+                if(!(timeoutLimit -= 1)) {
+                    return true;
+                }
+            }
+            until = std::chrono::steady_clock::now() + std::chrono::milliseconds(timeoutInMSec);
+        }
+        return false;
     }
     
     void spinAll() {
