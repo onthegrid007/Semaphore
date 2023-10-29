@@ -1,13 +1,17 @@
+/*
+*   BSD 3-Clause License, see file labled 'LICENSE' for the full License.
+*   Copyright (c) 2023, Peter Ferranti
+*   All rights reserved.
+*/
+
 #ifndef SEMAPHORE_HPP_
 #define SEMAPHORE_HPP_
 
 #include "vendor/Singleton/noncopyable.h"
-#include "vendor/Singleton/inline_abi_macros.h"
-// #include "vendor/ADVClock/vendor/Timestamp/timestamp.hpp"
 #include <condition_variable>
 #include <functional>
 
-class Semaphore {
+class Semaphore : public NonCopyable {
     public:
     typedef std::uint64_t CType;
     typedef std::function<bool(const CType cVal, const CType CInitVal)> WaitFunc;
