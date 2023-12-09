@@ -31,6 +31,10 @@ class Semaphore : public NonCopyable {
     
     ~Semaphore() {}
     
+    operator CType() {
+        return m_c;
+    }
+    
     void waitFor(WaitFunc spin) {
         CVLock lock(m_mtx);
         m_cv.wait(lock, [&](){ return spin(m_c, m_cInit); });
